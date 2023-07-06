@@ -2,13 +2,13 @@
 indicator('MACD BUY/SELL Sample Script', overlay=true)
 
 // Calculate MACD
-[macdLine, signalLine, _] = macd(close, 12, 26, 9)
+[macdLine, signalLine, _] = ta.macd(close, 12, 26, 9)
 
 // Define the golden cross condition
-buySignal = crossover(macdLine, signalLine)
+buySignal = ta.crossover(macdLine, signalLine)
 
 // Define the death cross condition
-sellSignal = crossunder(macdLine, signalLine)
+sellSignal = ta.crossunder(macdLine, signalLine)
 
 // Function to generate custom JSON payload
 getAlertMsg(action, instrument, signalToken, orderType, orderPriceOffset, investmentType, amount) =>
