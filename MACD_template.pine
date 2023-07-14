@@ -2,28 +2,15 @@
 indicator('MACD BUY/SELL Sample Script', overlay=true)
 
 // Calculate MACD
-[macdLine, signalLine, _] = macd(close, 12, 26, 9)
+[macdLine, signalLine, _] = ta.macd(close, 12, 26, 9)
 
 // Define the golden cross condition
-buySignal = crossover(macdLine, signalLine)
+buySignal = ta.crossover(macdLine, signalLine)
 
 // Define the death cross condition
-sellSignal = crossunder(macdLine, signalLine)
+sellSignal = ta.crossunder(macdLine, signalLine)
 
-// Function to generate custom JSON payload
-getAlertMsg(action, instrument, signalToken, orderType, orderPriceOffset, investmentType, amount) =>
-    str = '{'
-    str := str + '"action": "' + action + '", '
-    str := str + '"instrument": "' + instrument + '", '
-    str := str + '"signalToken": "' + signalToken + '", '
-    str := str + '"timestamp": "' + str.tostring(timenow) + '", '
-    str := str + '"orderType": "' + orderType + '", '
-    str := str + '"orderPriceOffset": "' + str.tostring(orderPriceOffset) + '", '
-    str := str + '"investmentType": "' + investmentType + '", '
-    str := str + '"amount": "' + str.tostring(amount) + '"'
-    str := str + '}'
-    str
-
+// OKX Signal Bot Inputs
 var ALERTGRP_CRED = "OKX Alert - Credential"
 signalToken = input("", "Signal Token", inline = "11", group = ALERTGRP_CRED)
 
@@ -42,6 +29,20 @@ exitOrderPriceOffset = input.float(0, "Order Price Offset", minval = 0, maxval =
 
 exitInvestmentType = input.string("percentage_position", "Investment Type", options = ["percentage_position"], inline = "51", group = ALERTGRP_EXIT)
 exitAmount = input.float(100, "Amount", minval = 0.01, maxval = 100, step = 0.01, inline = "51", group = ALERTGRP_EXIT)
+
+// OKX Signal Bot - Alert Msg Function
+getAlertMsg(action, instrument, signalToken, orderType, orderPriceOffset, investmentType, amount) =>
+    str = '{'
+    str := str + '"action": "' + action + '", '
+    str := str + '"instrument": "' + instrument + '", '
+    str := str + '"signalToken": "' + signalToken + '", '
+    str := str + '"timestamp": "' + str.tostring(timenow) + '", '
+    str := str + '"orderType": "' + orderType + '", '
+    str := str + '"orderPriceOffset": "' + str.tostring(orderPriceOffset) + '", '
+    str := str + '"investmentType": "' + investmentType + '", '
+    str := str + '"amount": "' + str.tostring(amount) + '"'
+    str := str + '}'
+    str
 
 if buySignal
     buyAlertMsg = getAlertMsg(action = 'ENTER_LONG', instrument = syminfo.ticker, signalToken = signalToken, orderType = enterOrderType, orderPriceOffset = enterOrderPriceOffset, investmentType = enterInvestmentType, amount = enterAmount)
