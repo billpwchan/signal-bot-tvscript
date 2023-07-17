@@ -107,7 +107,7 @@ SL_floating_long = entry_price_long - multiplier * Atr(ATR_period)
 exit_long = close < SL_floating_long
 
 ///// BACKTEST PERIOD ///////
-testStartYear = input(2018, 'Backtest Start Year')
+testStartYear = input(2023, 'Backtest Start Year')
 testStartMonth = input(1, 'Backtest Start Month')
 testStartDay = input(1, 'Backtest Start Day')
 testPeriodStart = timestamp(testStartYear, testStartMonth, testStartDay, 0, 0)
@@ -139,7 +139,7 @@ if testPeriod()
     
     strategy.close('long', when=exit_long, comment='exit long')
     if exit_long
-        sellAlertMsg = getAlertMsg(action = 'EXIT_SHORT', instrument = syminfo.ticker, signalToken = signalToken, orderType = exitOrderType, orderPriceOffset = exitOrderPriceOffset, investmentType = exitInvestmentType, amount = exitAmount)
+        sellAlertMsg = getAlertMsg(action = 'EXIT_LONG', instrument = syminfo.ticker, signalToken = signalToken, orderType = exitOrderType, orderPriceOffset = exitOrderPriceOffset, investmentType = exitInvestmentType, amount = exitAmount)
         alert(sellAlertMsg, freq = alert.freq_once_per_bar)
 
 

@@ -74,30 +74,30 @@ exitBarssincePrev1 = ta.barssince(buyExit[1])
 exitBarssincePrev2 = ta.barssince(sellExit[1])
 
 // ENTER_LONG Condition
-plotshape(buySignal and exitBarssince1 < entryBarssincePrev1 ? down : na, title='Long Entry', location=location.absolute, style=shape.circle, size=size.tiny, color=color.new(color.green, 0))
-plotshape(buySignal and showSignals and exitBarssince1 < entryBarssincePrev1 ? down : na, title='Long', text='Long Entry', location=location.absolute, style=shape.labelup, size=size.tiny, color=color.new(color.green, 0), textcolor=color.new(color.white, 0))
-if buySignal and exitBarssince1 < entryBarssincePrev1
+plotshape(buySignal and exitBarssince1 < entryBarssince1[1] ? down : na, title='Long Entry', location=location.absolute, style=shape.circle, size=size.tiny, color=color.new(color.green, 0))
+plotshape(buySignal and showSignals and exitBarssince1 < entryBarssince1[1] ? down : na, title='Long', text='Long Entry', location=location.absolute, style=shape.labelup, size=size.tiny, color=color.new(color.green, 0), textcolor=color.new(color.white, 0))
+if buySignal and exitBarssince1 < entryBarssince1[1]
     buyAlertMsg = getAlertMsg(action = 'ENTER_LONG', instrument = syminfo.ticker, signalToken = signalToken, orderType = enterOrderType, orderPriceOffset = enterOrderPriceOffset, investmentType = enterInvestmentType, amount = enterAmount)
     alert(buyAlertMsg, freq = alert.freq_once_per_bar)
 
 // ENTER_SHORT Condition
-plotshape(sellSignal and entryExitCondition2 < exitBarssincePrev2 ? up : na, title='Short Entry', location=location.absolute, style=shape.circle, size=size.tiny, color=color.new(color.red, 0))
-plotshape(sellSignal and showSignals and entryExitCondition2 < exitBarssincePrev2 ? up : na, title='Short', text='Short Entry', location=location.absolute, style=shape.labeldown, size=size.tiny, color=color.new(color.red, 0), textcolor=color.new(color.white, 0))
-if sellSignal and entryExitCondition2 < exitBarssincePrev2
+plotshape(sellSignal and exitBarssince2 < entryBarssince2[1] ? up : na, title='Short Entry', location=location.absolute, style=shape.circle, size=size.tiny, color=color.new(color.red, 0))
+plotshape(sellSignal and showSignals and exitBarssince2 < entryBarssince2[1] ? up : na, title='Short', text='Short Entry', location=location.absolute, style=shape.labeldown, size=size.tiny, color=color.new(color.red, 0), textcolor=color.new(color.white, 0))
+if sellSignal and exitBarssince2 < entryBarssince2[1]
     buyAlertMsg = getAlertMsg(action = 'ENTER_SHORT', instrument = syminfo.ticker, signalToken = signalToken, orderType = enterOrderType, orderPriceOffset = enterOrderPriceOffset, investmentType = enterInvestmentType, amount = enterAmount)
     alert(buyAlertMsg, freq = alert.freq_once_per_bar)
 
 // EXIT_LONG Condition
-plotshape(buyExit and entryBarssince1 < exitBarssincePrev1 ? up : na, title='Long Exit', location=location.absolute, style=shape.circle, size=size.tiny, color=color.new(color.blue, 0))
-plotshape(buyExit and showSignals and entryBarssince1 < exitBarssincePrev1 ? up : na, title='Long Exit', text='Exit Long', location=location.absolute, style=shape.labeldown, size=size.tiny, color=color.new(color.blue, 0), textcolor=color.new(color.white, 0))
-if buyExit and entryBarssince1 < exitBarssincePrev1
+plotshape(buyExit and entryBarssince1 < exitBarssince1[1] ? up : na, title='Long Exit', location=location.absolute, style=shape.circle, size=size.tiny, color=color.new(color.maroon, 0))
+plotshape(buyExit and showSignals and entryBarssince1 < exitBarssince1[1] ? up : na, title='Long Exit', text='Exit Long', location=location.absolute, style=shape.labeldown, size=size.tiny, color=color.new(color.maroon, 0), textcolor=color.new(color.white, 0))
+if buyExit and entryBarssince1 < exitBarssince1[1]
     sellAlertMsg = getAlertMsg(action = 'EXIT_LONG', instrument = syminfo.ticker, signalToken = signalToken, orderType = exitOrderType, orderPriceOffset = exitOrderPriceOffset, investmentType = exitInvestmentType, amount = exitAmount)
     alert(sellAlertMsg, freq = alert.freq_once_per_bar)
 
 // EXIT_SHORT Condition
-plotshape(sellExit and exitBarssince2 < entryBarssincePrev2 ? down : na, title='Short Exit', location=location.absolute, style=shape.circle, size=size.tiny, color=color.new(color.blue, 0))
-plotshape(sellExit and showSignals and exitBarssince2 < entryBarssincePrev2 ? down : na, title='Short', text='Exit Short', location=location.absolute, style=shape.labelup, size=size.tiny, color=color.new(color.blue, 0), textcolor=color.new(color.white, 0))
-if sellExit and exitBarssince2 < entryBarssincePrev2
+plotshape(sellExit and entryBarssince2 < exitBarssince2[1] ? down : na, title='Short Exit', location=location.absolute, style=shape.circle, size=size.tiny, color=color.new(color.purple, 0))
+plotshape(sellExit and showSignals and entryBarssince2 < exitBarssince2[1]  ? down : na, title='Short', text='Exit Short', location=location.absolute, style=shape.labelup, size=size.tiny, color=color.new(color.purple, 0), textcolor=color.new(color.white, 0))
+if sellExit and entryBarssince2 < exitBarssince2[1] 
     sellAlertMsg = getAlertMsg(action = 'EXIT_SHORT', instrument = syminfo.ticker, signalToken = signalToken, orderType = exitOrderType, orderPriceOffset = exitOrderPriceOffset, investmentType = exitInvestmentType, amount = exitAmount)
     alert(sellAlertMsg, freq = alert.freq_once_per_bar)
 

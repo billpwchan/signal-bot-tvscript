@@ -1,0 +1,91 @@
+//@version=5
+strategy("RSI Strategy", overlay=true)
+
+// OKX Signal Bot Inputs
+var ALERTGRP_CRED = "OKX Alert - Credential"
+signalToken = input("", "Signal Token", inline = "11", group = ALERTGRP_CRED)
+
+var ALERTGRP_ENTER = "OKX Alert - ENTER Signal"
+
+enterOrderType = input.string("market", "Order Type", options = ["market", "limit"], inline = "21", group = ALERTGRP_ENTER)
+enterOrderPriceOffset = input.float(0, "Order Price Offset", minval = 0, maxval = 100, step = 0.01, inline = "21", group = ALERTGRP_ENTER)
+
+enterInvestmentType = input.string("percentage_balance", "Investment Type", options = ["margin", "contract", "percentage_balance", "percentage_investment"], inline = "31", group = ALERTGRP_ENTER)
+enterAmount = input.float(100, "Amount", minval = 0.01, inline = "31", group = ALERTGRP_ENTER)
+
+var ALERTGRP_EXIT = "OKX Alert - EXIT Signal"
+
+exitOrderType = input.string("market", "Order Type", options = ["market", "limit"], inline = "41", group = ALERTGRP_EXIT)
+exitOrderPriceOffset = input.float(0, "Order Price Offset", minval = 0, maxval = 100, step = 0.01, inline = "41", group = ALERTGRP_EXIT)
+
+exitInvestmentType = input.string("percentage_position", "Investment Type", options = ["percentage_position"], inline = "51", group = ALERTGRP_EXIT)
+exitAmount = input.float(100, "Amount", minval = 0.01, maxval = 100, step = 0.01, inline = "51", group = ALERTGRP_EXIT)
+
+// OKX Signal Bot - Alert Msg Function
+getAlertMsg(action, instrument, signalToken, orderType, orderPriceOffset, investmentType, amount) =>
+    str = '{'
+    str := str + '"action": "' + action + '", '
+    str := str + '"instrument": "' + instrument + '", '
+    str := str + '"signalToken": "' + signalToken + '", '
+    str := str + '"timestamp": "' + str.format_time(timenow, "yyyy-MM-dd'T'HH:mm:ssZ", "UTC+0") + '", '
+    str := str + '"orderType": "' + orderType + '", '
+    str := str + '"orderPriceOffset": "' + str.tostring(orderPriceOffset) + '", '
+    str := str + '"investmentType": "' + investmentType + '", '
+    str := str + '"amount": "' + str.tostring(amount) + '"'
+    str := str + '}'
+    str
+
+// RSI Parameters
+rsiLength = input(14, "RSI Length")
+overboughtLevel = input(80, "Overbought Level")
+oversoldLevel = input(20, "Oversold Level")
+
+// Calculate RSI
+rsiValue = ta.rsi(close, rsiLength)
+
+// Strategy Conditions
+longEntry = ta.crossover(rsiValue, oversoldLevel)
+shortEntry = ta.crossunder(rsiValue, overboughtLevel)
+longExit = ta.crossunder(rsiValue, overboughtLevel)
+shortExit = ta.crossover(rsiValue, oversoldLevel)
+
+///// BACKTEST PERIOD ///////
+testStartYear = input(2023, 'Backtest Start Year')
+testStartMonth = input(1, 'Backtest Start Month')
+testStartDay = input(1, 'Backtest Start Day')
+testPeriodStart = timestamp(testStartYear, testStartMonth, testStartDay, 0, 0)
+
+testStopYear = input(9999, 'Backtest Stop Year')
+testStopMonth = input(12, 'Backtest Stop Month')
+testStopDay = input(31, 'Backtest Stop Day')
+testPeriodStop = timestamp(testStopYear, testStopMonth, testStopDay, 0, 0)
+
+testPeriod() =>
+    time >= testPeriodStart and time <= testPeriodStop ? true : false
+
+// Strategy Actions
+if testPeriod()
+    
+    // ENTER_LONG Condition
+    if longEntry
+        buyAlertMsg = getAlertMsg(action = 'ENTER_LONG', instrument = syminfo.ticker, signalToken = signalToken, orderType = enterOrderType, orderPriceOffset = enterOrderPriceOffset, investmentType = enterInvestmentType, amount = enterAmount)
+        alert(buyAlertMsg, freq = alert.freq_once_per_bar)
+        strategy.entry("Long Entry", strategy.long)
+
+    // ENTER_SHORT Condition
+    if shortEntry
+        buyAlertMsg = getAlertMsg(action = 'ENTER_SHORT', instrument = syminfo.ticker, signalToken = signalToken, orderType = enterOrderType, orderPriceOffset = enterOrderPriceOffset, investmentType = enterInvestmentType, amount = enterAmount)
+        alert(buyAlertMsg, freq = alert.freq_once_per_bar)
+        strategy.entry("Short Entry", strategy.short)
+
+    // EXIT_LONG Condition
+    if longExit
+        sellAlertMsg = getAlertMsg(action = 'EXIT_LONG', instrument = syminfo.ticker, signalToken = signalToken, orderType = exitOrderType, orderPriceOffset = exitOrderPriceOffset, investmentType = exitInvestmentType, amount = exitAmount)
+        alert(sellAlertMsg, freq = alert.freq_once_per_bar)
+        strategy.close("Long Exit")
+
+    // EXIT_SHORT Condition
+    if shortExit
+        sellAlertMsg = getAlertMsg(action = 'EXIT_SHORT', instrument = syminfo.ticker, signalToken = signalToken, orderType = exitOrderType, orderPriceOffset = exitOrderPriceOffset, investmentType = exitInvestmentType, amount = exitAmount)
+        alert(sellAlertMsg, freq = alert.freq_once_per_bar)
+        strategy.close("Short Exit")
