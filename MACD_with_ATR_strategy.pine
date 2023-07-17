@@ -1,0 +1,115 @@
+//@version=5
+indicator(title="MACD Strategy w/ ATR", shorttitle="MACD Strategy", overlay=true)
+
+// --- FUNCTIONS ---
+ema(src, p) =>
+    ema = ta.ema(src, p)
+    ema
+
+sma(src, p) =>
+    sma = ta.sma(src, p)
+    sma
+
+atr(p) =>
+    atr = ta.atr(p)
+    atr
+
+// --- TREND ---
+ribbon_period = input.int(34, 'Period', minval=1, step=1)
+
+leadLine1 = ta.ema(close, ribbon_period)
+leadLine2 = ta.sma(close, ribbon_period)
+
+// --- MACD ---
+fast_length = input(3, title='Fast Length')
+slow_length = input(5, title='Slow Length')
+src = input(close, title='Source')
+signal_length = input(2, title='Signal Smoothing')
+sma_source = input(false, title='Simple MA(Oscillator)')
+sma_signal = input(true, title='Simple MA(Signal Line)')
+
+// --- Plot colors ---
+col_grow_above = #26A69A
+col_grow_below = #FFCDD2
+col_fall_above = #B2DFDB
+col_fall_below = #EF5350
+col_macd = #0094ff
+col_signal = #ff6a00
+
+// --- Calculating MACD Values ---
+fast_ma = sma_source ? sma(src, fast_length) : ema(src, fast_length)
+slow_ma = sma_source ? sma(src, slow_length) : ema(src, slow_length)
+macd = fast_ma - slow_ma
+signal = sma_signal ? sma(macd, signal_length) : ema(macd, signal_length)
+hist = macd - signal
+
+// --- TAKE PROFIT AND STOP LOSS ---
+long_tp1_inp = input.float(1.0, title='Long Take Profit 1 %', step=0.1) / 100
+long_tp1_qty = input.int(10, title='Long Take Profit 1 Qty', step=1)
+
+long_tp2_inp = input.float(5.0, title='Long Take Profit 2%', step=0.1) / 100
+long_tp2_qty = input.int(50, title='Long Take Profit 2 Qty', step=1)
+
+long_take_level_1 = close * (1 + long_tp1_inp)
+long_take_level_2 = close * (1 + long_tp2_inp)
+
+multiplier = input.float(2.2, 'SL Mutiplier', minval=1, step=0.1)
+atr_period = input.int(17, 'ATR period', minval=1, step=1)
+
+// --- Strategy ---
+entry_long = ta.crossover(macd, signal) and ta.cross(leadLine2, leadLine1)
+entry_price_long = ta.valuewhen(entry_long, close, 0)
+SL_floating_long = entry_price_long - multiplier * atr(atr_period)
+exit_long = ta.crossunder(close, SL_floating_long)
+
+// --- OKX Signal Bot Inputs ---
+alert_grp_cred = "OKX Alert - Credential"
+signal_token = input("", "Signal Token", inline="11", group=alert_grp_cred)
+
+alert_grp_enter = "OKX Alert - ENTER Signal"
+enter_order_type = input.string("market", "Order Type", options=["market", "limit"], inline="21", group=alert_grp_enter)
+enter_order_price_offset = input.float(0, "Order Price Offset", minval=0, maxval=100, step=0.01, inline="21", group=alert_grp_enter)
+enter_investment_type = input.string("percentage_balance", "Investment Type", options=["margin", "contract", "percentage_balance", "percentage_investment"], inline="31", group=alert_grp_enter)
+enter_amount = input.float(100, "Amount", minval=0.01, inline="31", group=alert_grp_enter)
+
+alert_grp_exit = "OKX Alert - EXIT Signal"
+exit_order_type = input.string("market", "Order Type", options=["market", "limit"], inline="41", group=alert_grp_exit)
+exit_order_price_offset = input.float(0, "Order Price Offset", minval=0, maxval=100, step=0.01, inline="41", group=alert_grp_exit)
+exit_investment_type = input.string("percentage_position", "Investment Type", options=["percentage_position"], inline="51", group=alert_grp_exit)
+exit_amount = input.float(100, "Amount", minval=0.01, maxval=100, step=0.01, inline="51", group=alert_grp_exit)
+
+// --- OKX Signal Bot - Alert Msg Function ---
+get_alert_msg(action, instrument, signal_token, order_type, order_price_offset, investment_type, amount) =>
+    str = '{'
+    str += '"action": "' + action + '", '
+    str += '"instrument": "' + instrument + '", '
+    str += '"signalToken": "' + signal_token + '", '
+    str += '"timestamp": "' + str.tostring(timenow) + '", '
+    str += '"orderType": "' + order_type + '", '
+    str += '"orderPriceOffset": "' + str.tostring(order_price_offset) + '", '
+    str += '"investmentType": "' + investment_type + '", '
+    str += '"amount": "' + str.tostring(amount) + '"'
+    str += '}'
+    str
+
+if entry_long
+    buy_alert_msg = get_alert_msg('ENTER_LONG', syminfo.ticker, signal_token, enter_order_type, enter_order_price_offset, enter_investment_type, enter_amount)
+    alert(buy_alert_msg, freq=alert.freq_once_per_bar)
+
+    // First TP to close 10% open position after 1% price increase
+    sell_alert_msg = get_alert_msg('EXIT_LONG', syminfo.ticker, signal_token, 'limit', long_tp1_inp * 100, exit_investment_type, long_tp1_qty)
+    alert(sell_alert_msg, freq=alert.freq_once_per_bar)
+
+    // Second TP to close 45% open position after 5% price increase
+    sell_alert_msg := get_alert_msg('EXIT_LONG', syminfo.ticker, signal_token, 'limit', long_tp2_inp * 100, exit_investment_type, long_tp2_qty)
+    alert(sell_alert_msg, freq=alert.freq_once_per_bar)
+
+plotshape(entry_long ? 1 : 0, title='ENTER LONG', style=shape.triangleup, size=size.small, color=color.lime, location=location.belowbar)
+plot(entry_long ? long_take_level_1 : na, style=plot.style_linebr, color=color.new(color.yellow, 0), linewidth=3, title='1st Long Take Profit')
+plot(entry_long ? long_take_level_2 : na, style=plot.style_linebr, color=color.new(color.navy, 0), linewidth=3, title='2nd Long Take Profit')
+
+if exit_long
+    sell_alert_msg = get_alert_msg('EXIT_LONG', syminfo.ticker, signal_token, exit_order_type, exit_order_price_offset, exit_investment_type, exit_amount)
+    alert(sell_alert_msg, freq=alert.freq_once_per_bar)
+
+plotshape(exit_long ? 1 : 0, title='EXIT LONG', style=shape.triangledown, size=size.small, color=color.red, location=location.abovebar)
